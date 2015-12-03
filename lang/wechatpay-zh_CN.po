@@ -1,0 +1,134 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2015-12-03 11:26+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Poedit 1.6.11\n"
+"Project-Id-Version: Administration\n"
+"POT-Creation-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh_CN\n"
+
+msgid ""
+"Integrate the Chinese WeChat payment gateway with Woocommerce. WeChat is one "
+"of the most widely used payment method in China."
+msgstr "使WooCommerce支持微信付款，微信支付是中国应用最广泛的支付方式之一。"
+
+msgid "Proceed to WeChatPay"
+msgstr "使用微信扫码支付"
+
+msgid ""
+"WeChatPay is enabled, but the store currency is not set to Chinese Yuan. "
+"Please <a href=\"%1s\">set the %2s against the Chinese Yuan exchange rate</"
+"a>."
+msgstr ""
+"微信支付已启用，但您的主货币不是人民币，请<a href=\"%1s\">设置转人民币的汇率"
+"</a>."
+
+msgid "Enable/Disable"
+msgstr "启用/禁用"
+
+msgid "Enable WeChatPay Payment"
+msgstr "启用微信支付"
+
+msgid "Title"
+msgstr "标题"
+
+msgid "This controls the title which the user sees during checkout."
+msgstr "支付网关名称，用户结账时显示"
+
+msgid "Description"
+msgstr "描述"
+
+msgid "This controls the description which the user sees during checkout."
+msgstr "描述一下支付网关，用户结账时会看到"
+
+msgid ""
+"Pay via WeChatPay, if you don't have an WeChatPay account, you can also pay "
+"with your debit card or credit card"
+msgstr "通过微信支付，如果没有微信账号，也可以绑定卡号支付"
+
+msgid "Application ID"
+msgstr "微信开放平台APP账号"
+
+msgid ""
+"Please enter the Application ID,If you don't have one, <a href=\"https://pay."
+"weixin.qq.com\" target=\"_blank\">click here</a> to get."
+msgstr ""
+"请输入APP账号，如果没有，<a href=\"https://pay.weixin.qq.com\" target="
+"\"_blank\">点击这里获取</a>"
+
+msgid "Merchant ID"
+msgstr "微信商户账号"
+
+msgid ""
+"Please enter the Merchant ID,If you don't have one, <a href=\"https://pay."
+"weixin.qq.com\" target=\"_blank\">click here</a> to get."
+msgstr ""
+"请输入商户账号，如果没有，<a href=\"https://pay.weixin.qq.com\" target="
+"\"_blank\">点击这里获取</a>"
+
+msgid "WeChatPay Key"
+msgstr "微信秘钥"
+
+msgid ""
+"Please enter your WeChatPay Key; this is needed in order to take payment."
+msgstr "请输入你的微信秘钥"
+
+msgid "Enable Proxy"
+msgstr "启用代理"
+
+msgid ""
+"If you are behind firewall or behind company network, you can  enable proxy "
+"to make the plugin works."
+msgstr "如果不能访问外网，请启用代理"
+
+msgid "Proxy Host"
+msgstr "代理域名"
+
+msgid "Please set proxy host."
+msgstr "请设置代理的域名"
+
+msgid "Proxy Port"
+msgstr "代理端口"
+
+msgid "Please set proxy port."
+msgstr "请设置代理的端口"
+
+msgid "Debug Log"
+msgstr "调试日志"
+
+msgid "Enable logging"
+msgstr "启用调试日志"
+
+msgid ""
+"Log WeChatPay events, such as trade status, inside <code>/plugins/weChatPay-"
+"for-woocommerce/logs/</code>"
+msgstr ""
+"调试日志会记录微信通知事件和交易状态，日志保存在<code>/plugins/weChatPay-for-"
+"woocommerce/logs/</code>"
+
+msgid "Exchange Rate"
+msgstr "汇率"
+
+msgid ""
+"Please set the %s against Chinese Yuan exchange rate, eg if your currency is "
+"US Dollar, then you should enter 6.19"
+msgstr "请设置%s转人民币的汇率，例如您的主货币是美元，请填写6.19"
+
+msgid "WeChatPay is a simple, secure and fast online payment method."
+msgstr ""
+"微信支付是一个“简单、安全、快速”的在线支付方式，客户可以通过储蓄卡、借记卡、"
+"信用卡或微信余额等方式付款。"
+
+msgid "Please scan the QR code with WeChat to finish the payment."
+msgstr "请通过微信扫描下方的二维码来完成支付。"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "WeChatPay"
+msgstr "微信支付"
