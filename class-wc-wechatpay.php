@@ -54,6 +54,7 @@ class WC_WeChatPay extends WC_Payment_Gateway
         $this->exchange_rate = $this->get_option('exchange_rate');
         $this->order_prefix = $this->get_option('order_prefix');
         $this->notify_url = WC()->api_request_url('WC_WeChatPay');
+        $this->ipn = null;
 
 
         $this->logger = Log::Init(new CLogFileHandler(plugin_dir_path(__FILE__) . "logs/" . date('Y-m-d') . '.log'), 15);;
@@ -67,9 +68,9 @@ class WC_WeChatPay extends WC_Payment_Gateway
         add_action('woocommerce_update_options_payment_gateways', array($this, 'process_admin_options'));
         add_action('woocommerce_receipt_wechatpay', array($this, 'receipt_page'));
         add_action('woocommerce_api_wc_wechatpay', array($this, 'check_wechatpay_response'));
-      //  add_action('woocommerce_thankyou_wechatpay', array($this, 'thankyou_page'));
+        //  add_action('woocommerce_thankyou_wechatpay', array($this, 'thankyou_page'));
         add_action('template_redirect', array($this, 'reset_cart_front'));
-        add_action('admin_enqueue_scripts', array($this,'WX_enqueue_script'));
+        add_action('admin_enqueue_scripts', array($this, 'WX_enqueue_script'));
     }
 
     function WX_enqueue_script()
@@ -87,11 +88,6 @@ class WC_WeChatPay extends WC_Payment_Gateway
 
     }
 
-    function thankyou_page($order_id)
-    {
-
-    }
-
 
     function check_wechatpay_response()
     {
@@ -102,24 +98,34 @@ class WC_WeChatPay extends WC_Payment_Gateway
             QRcode::png($url);
             exit;
         } else { //handle ipn callback
-            $ipn = $_POST;
+            $xml = $GLOBALS['HTTP_RAW_POST_DATA'];
+            Log::DEBUG(' message callback.' . print_r($xml, true));
             Log::DEBUG('weChat Async IPN message callback.');
-            if ($this->isWeChatIPNValid($ipn)) {
+            if ($this->isWeChatIPNValid($xml)) {
                 Log::DEBUG('weChat IPN is valid message.');
-                Log::DEBUG('weChat Async IPN message:' . print_r($ipn, true));
-                $order_id = $ipn['attach'];
+                Log::DEBUG('weChat Async IPN message:' . print_r($xml, true));
+                $order_id = $this->ipn['attach'];
                 $order = new WC_Order($order_id);
                 $order->payment_complete();
-                $trade_no = $ipn['transaction_id'];
+                $trade_no = $this->ipn['transaction_id'];
                 update_post_meta($order_id, 'WeChatPay Trade No.', wc_clean($trade_no));
+
+                $reply = new WxPayNotifyReply();
+                $reply->SetReturn_code("SUCCESS");
+                $reply->SetReturn_msg("OK");
+                WxpayApi::replyNotify($reply->ToXml());
+
                 if (is_checkout_pay_page()) {
                     Log::DEBUG('redirect to order received page.');
                     $returnUrl = urldecode($this->get_return_url($order));
                     wp_redirect($returnUrl);
                 }
+            } else {
+                $reply = new WxPayNotifyReply();
+                $reply->SetReturn_code("FAIL");
+                $reply->SetReturn_msg("OK");
+                WxpayApi::replyNotify($reply->ToXml());
             }
-
-
         }
 
     }
@@ -250,9 +256,9 @@ class WC_WeChatPay extends WC_Payment_Gateway
                 'description' => __('Log WeChatPay events, such as trade status, inside <code>/plugins/weChatPay-for-woocommerce/logs/</code>', 'wechatpay')
             )
         );
-/*        if (function_exists('wc_get_log_file_path')) {
-            $this->form_fields['WX_debug']['description'] = sprintf(__('Log WeChatPay events, such as trade status, inside <code>%s</code>', 'wechatpay'), plugin_dir_path(__FILE__) . 'logs/');
-        }*/
+        /*        if (function_exists('wc_get_log_file_path')) {
+                    $this->form_fields['WX_debug']['description'] = sprintf(__('Log WeChatPay events, such as trade status, inside <code>%s</code>', 'wechatpay'), plugin_dir_path(__FILE__) . 'logs/');
+                }*/
         if (!in_array($this->current_currency, array('RMB', 'CNY'))) {
 
             $this->form_fields['exchange_rate'] = array(
@@ -286,7 +292,7 @@ class WC_WeChatPay extends WC_Payment_Gateway
             $this->generate_settings_html();
             ?>
         </table><!--/.form-table-->
-    <?php
+        <?php
     }
 
 
@@ -308,13 +314,13 @@ class WC_WeChatPay extends WC_Payment_Gateway
         $total = $order->get_total();
         $totalFee = (int)($total * 100);
         $input = new WxPayUnifiedOrder();
-        $input->SetBody("Shop Name: ".get_option('blogname'));
+        $input->SetBody("Shop Name: " . get_option('blogname'));
         $input->SetDetail("");
         $input->SetAttach($order_id);
         $input->SetOut_trade_no(date("YmdHis"));
 
         if (!in_array($this->current_currency, array('RMB', 'CNY'))) {
-            $totalFee = round( $totalFee * $this->exchange_rate, 2 );
+            $totalFee = round($totalFee * $this->exchange_rate, 2);
         }
         $input->SetTotal_fee($totalFee);
 
@@ -337,15 +343,26 @@ class WC_WeChatPay extends WC_Payment_Gateway
     /*
      * Validate ipn message is valid or not
      */
-    function isWeChatIPNValid($ipn)
+    function isWeChatIPNValid($ipnXml)
     {
-        Log::DEBUG("call back  ipn:" . json_encode($ipn));
 
-        if (!array_key_exists("transaction_id", $ipn)) {
+        //如果返回成功则验证签名
+        try {
+            $result = WxPayResults::Init($ipnXml);
+            $this->ipn = $result;
+        } catch (WxPayException $e) {
+            $msg = $e->errorMessage();
             return false;
         }
 
-        if (!$this->Queryorder($ipn["transaction_id"])) {
+
+        Log::DEBUG("call back  ipn:" . json_encode($result));
+
+        if (!array_key_exists("transaction_id", $result)) {
+            return false;
+        }
+
+        if (!$this->Queryorder($result["transaction_id"])) {
             return false;
         }
 
@@ -395,7 +412,7 @@ class WC_WeChatPay extends WC_Payment_Gateway
     {
         $weChatOptions = get_option('woocommerce_wechatpay_settings');
         $WxCfg = new WxPayConfig($weChatOptions["wechatpay_appID"], $weChatOptions["wechatpay_mchId"], $weChatOptions["wechatpay_key"]);
-        if($weChatOptions["WX_EnableProxy"]){
+        if ($weChatOptions["WX_EnableProxy"]) {
             $WxCfg->setCURLPROXYHOST($weChatOptions["WX_ProxyHost"]);
             $WxCfg->setCURLPROXYPORT($weChatOptions["WX_ProxyPort"]);
         }
