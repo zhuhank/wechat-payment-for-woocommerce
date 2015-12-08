@@ -13,10 +13,11 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
+
 function wc_wechatpay_gateway_init() {
 
     if( !class_exists('WC_Payment_Gateway') )  return;
-
+    include_once( plugin_dir_path(__FILE__) .'/class-wc-wechatpay.php');
     load_plugin_textdomain( 'wechatpay', false, dirname( plugin_basename( __FILE__ ) ) . '/lang/'  );
 
     require_once( plugin_basename( 'class-wc-wechatpay.php' ) );
@@ -25,6 +26,10 @@ function wc_wechatpay_gateway_init() {
 
     add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wc_wechatpay_plugin_edit_link' );
 
+    $WX = new WC_WeChatPay();
+    add_action( 'wp_ajax_WXLoopOrderStatus', array($WX, "WX_Loop_Order_Status" ) );
+    add_action( 'wp_ajax_nopriv_WXLoopOrderStatus', array($WX, "WX_Loop_Order_Status") );
+    add_action('woocommerce_receipt_wechatpay', array($WX, 'receipt_page'));
 }
 add_action( 'plugins_loaded', 'wc_wechatpay_gateway_init' );
 

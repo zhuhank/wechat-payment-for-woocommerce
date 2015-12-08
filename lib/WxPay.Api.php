@@ -21,7 +21,7 @@ class WxPayApi
 	 * @throws WxPayException
 	 * @return 成功时返回，其他抛异常
 	 */
-	public static function unifiedOrder($inputObj, $timeOut = 6,$WxCfg)
+	public static function unifiedOrder($inputObj, $timeOut = 10,$WxCfg)
 	{
 		$url = "https://api.mch.weixin.qq.com/pay/unifiedorder";
 		//检测必填参数
@@ -266,8 +266,7 @@ class WxPayApi
 		curl_setopt($ch, CURLOPT_TIMEOUT, $second);
 		
 		//如果有配置代理这里就设置代理
-		if($WxCfg->getCURLPROXYHOST() != "0.0.0.0"
-			&&$WxCfg->getCURLPROXYPORT()!= 0){
+		if($WxCfg->isEnableProxy()){
 			curl_setopt($ch,CURLOPT_PROXY, $WxCfg->getCURLPROXYHOST());
 			curl_setopt($ch,CURLOPT_PROXYPORT, $WxCfg->getCURLPROXYPORT());
 		}

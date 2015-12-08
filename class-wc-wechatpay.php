@@ -56,7 +56,6 @@ class WC_WeChatPay extends WC_Payment_Gateway
         $this->notify_url = WC()->api_request_url('WC_WeChatPay');
         $this->ipn = null;
 
-
         $this->logger = Log::Init(new CLogFileHandler(plugin_dir_path(__FILE__) . "logs/" . date('Y-m-d') . '.log'), 15);;
         if ('yes' == $this->debug) {
             $this->log = new WC_Logger();
@@ -66,23 +65,57 @@ class WC_WeChatPay extends WC_Payment_Gateway
         add_action('admin_notices', array($this, 'requirement_checks'));
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options')); // WC >= 2.0
         add_action('woocommerce_update_options_payment_gateways', array($this, 'process_admin_options'));
-        add_action('woocommerce_receipt_wechatpay', array($this, 'receipt_page'));
+
         add_action('woocommerce_api_wc_wechatpay', array($this, 'check_wechatpay_response'));
         //  add_action('woocommerce_thankyou_wechatpay', array($this, 'thankyou_page'));
         add_action('template_redirect', array($this, 'reset_cart_front'));
         add_action('admin_enqueue_scripts', array($this, 'WX_enqueue_script'));
+        add_action( 'wp_enqueue_scripts',array($this,'WX_enqueue_script_onCheckout')  );
+    }
+
+
+
+    public function WX_Loop_Order_Status(){
+
+        //ajax loop
+        Log::DEBUG(' start loop !' );
+
+        $order_id =  $_GET['orderId'];
+        $order = new WC_Order($order_id);
+        $isPaid =! $order->needs_payment();
+        Log::DEBUG(" check_wechatpay_response orderid:".$order_id."is need pay:" .$isPaid);
+        if($isPaid){
+            $returnUrl = urldecode($this->get_return_url($order));
+            echo json_encode(array(
+                'status' =>'paid',
+                'message'=>$returnUrl
+            ));
+        }else{
+            echo json_encode(array(
+                'status' =>'nPaid',
+                'message'=>'nPaid'
+            ));
+        }
+        die('');
+    }
+
+    function WX_enqueue_script_onCheckout()
+    {
+        if (is_checkout_pay_page()) {
+            wp_enqueue_script('Woo_WX_Loop', plugins_url( '/js/WX_Loop.js',__FILE__) , array('jquery'),null);
+        }
     }
 
     function WX_enqueue_script()
     {
-        wp_enqueue_script('Woo_WX_Setting', plugins_url('weChatPay-for-woocommerce') . '/js/WX_Setting.js', array('jquery'));
+        wp_enqueue_script('Woo_WX_Setting', plugins_url('/js/WX_Setting.js',__FILE__) , array('jquery'));
     }
 
     function reset_cart_front()
     {
         global $woocommerce;
 
-        if (!is_checkout()) {
+        if (is_checkout_pay_page()) {
             $woocommerce->cart->empty_cart();
         }
 
@@ -91,6 +124,7 @@ class WC_WeChatPay extends WC_Payment_Gateway
 
     function check_wechatpay_response()
     {
+
         //generate QR Code
         if (isset($_GET['QRData'])) {
             $url = $_GET['QRData'];
@@ -115,11 +149,6 @@ class WC_WeChatPay extends WC_Payment_Gateway
                 $reply->SetReturn_msg("OK");
                 WxpayApi::replyNotify($reply->ToXml());
 
-                if (is_checkout_pay_page()) {
-                    Log::DEBUG('redirect to order received page.');
-                    $returnUrl = urldecode($this->get_return_url($order));
-                    wp_redirect($returnUrl);
-                }
             } else {
                 $reply = new WxPayNotifyReply();
                 $reply->SetReturn_code("FAIL");
@@ -393,17 +422,21 @@ class WC_WeChatPay extends WC_Payment_Gateway
 
     function  genetateQR($order_id)
     {
-        $baseQR = $this->notify_url . '&QRData=';
-        $url = urlencode(urldecode($this->getWXURI($order_id)));
-        $qrUrl = $baseQR . $url;
-        echo '<img alt="QR Code" style="width:200px;height:200px" src=' . $qrUrl . '>';
+            $baseQR = $this->notify_url . '?QRData=';
+            $url = urlencode(urldecode($this->getWXURI($order_id)));
+            $qrUrl = $baseQR . $url;
+            echo '<img id="WxQRCode" alt="QR Code" style="width:200px;height:200px" OId ='.$order_id. " loopUrl=".$this->notify_url." src=" .  $qrUrl . '>';
+
     }
 
     function receipt_page($order)
     {
-        Log::DEBUG('Pay order with weChat payment');
-        echo '<p>' . __('Please scan the QR code with WeChat to finish the payment.', 'wechatpay') . '</p>';
-        $this->genetateQR($order);
+        if(!$this->qrUrl){
+            Log::DEBUG('Pay order with weChat payment');
+            echo '<p>' . __('Please scan the QR code with WeChat to finish the payment.', 'wechatpay') . '</p>';
+            $this->genetateQR($order);
+        }
+
 
     }
 
@@ -412,6 +445,7 @@ class WC_WeChatPay extends WC_Payment_Gateway
     {
         $weChatOptions = get_option('woocommerce_wechatpay_settings');
         $WxCfg = new WxPayConfig($weChatOptions["wechatpay_appID"], $weChatOptions["wechatpay_mchId"], $weChatOptions["wechatpay_key"]);
+        $WxCfg->setEnableProxy($weChatOptions["WX_EnableProxy"]);
         if ($weChatOptions["WX_EnableProxy"]) {
             $WxCfg->setCURLPROXYHOST($weChatOptions["WX_ProxyHost"]);
             $WxCfg->setCURLPROXYPORT($weChatOptions["WX_ProxyPort"]);

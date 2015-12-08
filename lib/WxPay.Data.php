@@ -207,7 +207,7 @@ class WxPayResults extends WxPayDataBase
 		if($obj->values['return_code'] != 'SUCCESS'){
 			 return $obj->GetValues();
 		}
-		$obj->CheckSign($WxCfg);
+//		$obj->CheckSign($WxCfg);
         return $obj->GetValues();
 	}
 }
