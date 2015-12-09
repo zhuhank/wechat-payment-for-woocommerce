@@ -1,5 +1,5 @@
 (function ($) {
-    var loopCnt = 10;
+    var loopCnt = 50;
     var looptime = 300; //ms
 
     function queryOrderStatus() {

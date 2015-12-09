@@ -101,9 +101,14 @@ class WC_WeChatPay extends WC_Payment_Gateway
 
     function WX_enqueue_script_onCheckout()
     {
-        if (is_checkout_pay_page()) {
-            wp_enqueue_script('Woo_WX_Loop', plugins_url( '/js/WX_Loop.js',__FILE__) , array('jquery'),null);
+        $orderId =  get_query_var('order-pay');
+        $order = new WC_Order($orderId);
+        if("wechatpay" ==$order->payment_method ){
+            if (is_checkout_pay_page()&&!isset($_GET['pay_for_order'])) {
+                wp_enqueue_script('Woo_WX_Loop', plugins_url( '/js/WX_Loop.js',__FILE__) , array('jquery'),null);
+            }
         }
+
     }
 
     function WX_enqueue_script()
